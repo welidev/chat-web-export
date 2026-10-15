@@ -1,0 +1,6 @@
+node_modules/
+chat-web-export-*.txt
+chat-web-export-*.json
+wppconnect-wa.js
+.claude/
+.DS_Store

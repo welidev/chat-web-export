@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>chat-web-export</title>
+<meta name="description" content="chat-web-export: an educational, non-commercial tool to export your own chats from WhatsApp Web as text and JSON. Runs in your browser; nothing is uploaded. Not affiliated with WhatsApp or Meta.">
+<style>
+  :root {
+    --bg: #ffffff; --fg: #111111; --muted: #666666; --line: #e6e6e6; --panel: #f6f6f6;
+    --accent: #111111; --accent-fg: #ffffff; --ok: #1f9d55; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f0f0f; --fg: #f2f2f2; --muted: #9a9a9a; --line: #2a2a2a; --panel: #181818; --accent: #f2f2f2; --accent-fg: #0f0f0f; --ok: #3ccf74; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 16px 80px; }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 12px; }
+  h2 { font-size: 20px; margin: 40px 0 8px; letter-spacing: -0.01em; }
+  p { margin: 0 0 12px; }
+  .lead { font-size: 18px; color: var(--muted); max-width: 60ch; }
+  ol.steps { list-style: none; padding: 0; margin: 32px 0 0; counter-reset: s; }
+  ol.steps > li { counter-increment: s; border-top: 1px solid var(--line); padding: 24px 0 24px 56px; position: relative; }
+  ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 22px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-weight: 600; font-size: 15px; }
+  ol.steps h3 { margin: 4px 0 8px; font-size: 17px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-fg); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
+  .btn.secondary { background: transparent; color: var(--fg); border-color: var(--line); }
+  .btn:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+  .hint { color: var(--muted); font-size: 14px; }
+  kbd { font: 13px var(--mono); background: var(--panel); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; }
+  code { font: 14px var(--mono); background: var(--panel); border-radius: 4px; padding: 1px 5px; }
+  .options { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 14px; }
+  .options label { display: inline-flex; align-items: center; gap: 10px; font-size: 15px; padding: 8px 14px 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); cursor: pointer; }
+  .options label:has(:focus-visible) { outline: 2px solid var(--ok); outline-offset: 2px; }
+  .options input[type=number] { width: 56px; font: inherit; font-variant-numeric: tabular-nums; text-align: center; padding: 2px 4px; border: 0; border-bottom: 1px solid var(--muted); border-radius: 0; background: transparent; color: var(--fg); -moz-appearance: textfield; }
+  .options input[type=number]::-webkit-outer-spin-button, .options input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .options input[type=number]:focus { outline: none; border-bottom-color: var(--fg); }
+  .options input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--ok); }
+  .card { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 10px 10px 14px; border-bottom: 1px solid var(--line); }
+  .card-head .name { font: 13px var(--mono); color: var(--muted); display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .card-head .name b { color: var(--fg); font-weight: 600; }
+  .card-head .btn { padding: 7px 14px; font-size: 14px; border-radius: 7px; min-width: 88px; justify-content: center; }
+  .card-body { position: relative; max-height: 132px; overflow: hidden; }
+  .card-body::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 56px; background: linear-gradient(to bottom, transparent, var(--panel)); pointer-events: none; }
+  .card pre { margin: 0; padding: 12px 14px 16px; font: 12.5px/1.6 var(--mono); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; cursor: text; }
+  .card pre .cfg { color: var(--fg); font-weight: 600; }
+  .status { font-size: 14px; color: var(--ok); min-height: 20px; margin-top: 8px; }
+  pre.sample { font: 13px/1.5 var(--mono); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; margin: 0; }
+  details { border-top: 1px solid var(--line); padding: 14px 0; }
+  details:last-of-type { border-bottom: 1px solid var(--line); }
+  summary { cursor: pointer; font-weight: 600; }
+  details p { margin-top: 10px; color: var(--muted); }
+  .notice { margin: 24px 0 0; padding: 12px 16px; border: 1px solid var(--line); border-left: 3px solid var(--muted); border-radius: 8px; background: var(--panel); font-size: 14px; color: var(--muted); }
+  .notice b { color: var(--fg); }
+  .brand { font: 600 14px var(--mono); color: var(--muted); margin: 0 0 18px; }
+  footer { margin-top: 56px; color: var(--muted); font-size: 14px; }
+  footer a, p a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <p class="brand">chat-web-export</p>
+  <h1>Export your own chats from WhatsApp Web</h1>
+  <p class="lead">Every chat, as a readable <code>.txt</code> and a complete <code>.json</code>. It runs inside WhatsApp Web in your own browser. Nothing is uploaded, nothing is installed, and there is no account.</p>
+
+  <p class="notice"><b>For educational and personal-archival purposes only.</b> chat-web-export is an independent, non-commercial project, not affiliated with, endorsed by, or supported by WhatsApp LLC or Meta. It uses no official API and may stop working at any time. Scripting WhatsApp Web may be against WhatsApp's Terms of Service: use it only on your own account, at your own risk, and respect the privacy of the people you chat with. <a id="disclaimer-top" href="https://github.com/welidev/chat-web-export/blob/main/DISCLAIMER.md" rel="noopener">Read the full disclaimer</a>.</p>
+
+  <ol class="steps">
+    <li>
+      <h3>Download the wa-js library</h3>
+      <p>The exporter runs on <a href="https://github.com/wppconnect-team/wa-js" rel="noopener">wa-js</a>, an independent open-source library by the WPPConnect team, also not affiliated with WhatsApp or Meta. The button always gives you the latest release, so compatibility fixes reach you without an update here.</p>
+      <p><a class="btn" href="https://github.com/wppconnect-team/wa-js/releases/latest/download/wppconnect-wa.js" rel="noopener">Download wppconnect-wa.js</a></p>
+      <p class="hint">Downloaded from the wa-js releases page on GitHub.</p>
+    </li>
+    <li>
+      <h3>Open the console on WhatsApp Web</h3>
+      <p>Go to <a href="https://web.whatsapp.com" rel="noopener">web.whatsapp.com</a> and sign in with your own account. Then open the developer console: <kbd>⌥</kbd><kbd>⌘</kbd><kbd>J</kbd> on Mac, <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>J</kbd> on Windows and Linux. Chrome and Edge ask you to type <code>allow pasting</code> the first time you paste there.</p>
+    </li>
+    <li>
+      <h3>Copy the script and paste it in the console</h3>
+      <div class="options">
+        <label>Last <input type="number" id="days" min="0" step="1" value="0" inputmode="numeric"> days <span class="hint">(0 = everything)</span></label>
+        <label><input type="checkbox" id="deep" checked> Also fetch older history from your phone</label>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="name"><b>export.js</b> <span id="size">·</span></span>
+          <button class="btn" id="copy" type="button">Copy script</button>
+        </div>
+        <div class="card-body"><pre id="script" tabindex="0" aria-label="Script to paste in the console">Loading…</pre></div>
+      </div>
+      <div class="status" id="status" role="status"></div>
+      <p class="hint">Press <kbd>Enter</kbd>. A file picker opens: choose the <code>wppconnect-wa.js</code> you downloaded. Then confirm that the account is yours. Progress is logged in the console, and two files are saved when it finishes. Keep the tab open and your phone online while it runs.</p>
+    </li>
+  </ol>
+
+  <h2>What you get</h2>
+<pre class="sample">===== Maria — 2,431 messages =====
+[2026-10-14 18:02:11] Maria: are you coming tonight?
+[2026-10-14 18:05:40] me: yes, 8ish
+[2026-10-14 18:05:52] Maria: &lt;image omitted&gt; the place
+
+===== Family (group) — 11,820 messages =====
+[2026-10-13 09:12:03] Dad: &lt;voice note omitted&gt;</pre>
+  <p class="hint">The <code>.json</code> has the same messages with ids, timestamps, sender, type, quoted message id and forwarded flag per message, grouped by chat.</p>
+
+  <h2>Questions</h2>
+  <details>
+    <summary>Why do I download a file and choose it?</summary>
+    <p>The library is loaded from a file on your computer that you choose, so the script fetches nothing from other servers and you can inspect exactly what runs. It also means you always run the newest wa-js release, which keeps the exporter compatible as WhatsApp Web changes.</p>
+  </details>
+  <details>
+    <summary>Where does my data go?</summary>
+    <p>Nowhere. The script runs in the WhatsApp Web tab, reads only what your signed-in account can already see, and saves two files to your computer. It does not bypass sign-in, encryption or any access control. It also turns off the anonymous usage ping that wa-js sends by default. You can read every line of it on GitHub.</p>
+  </details>
+  <details>
+    <summary>Does it export photos, videos and voice notes?</summary>
+    <p>No, only text. Media shows up as a placeholder like <code>&lt;image omitted&gt;</code> with the caption or file name when there is one.</p>
+  </details>
+  <details>
+    <summary>How far back does it go?</summary>
+    <p>WhatsApp Web only keeps recent history locally. With "fetch older history from your phone" on, the script asks your phone for older batches, chat by chat, the same way the "get older messages" button does. That needs your phone online and takes longer on big chats. Use the "last N days" option for a quick partial export.</p>
+  </details>
+  <details>
+    <summary>Is this allowed?</summary>
+    <p>This is an unofficial, educational, non-commercial project. It reads data WhatsApp Web already holds for your own account and uses no official API. WhatsApp's Terms of Service restrict automated or unofficial use of the service, so it is on you to review them and decide. The authors accept no liability for data loss, account restrictions, or anything else that follows from using it. Only export your own conversations, and treat other people's messages as their personal data.</p>
+  </details>
+  <details>
+    <summary>Nothing happens, or there is an error</summary>
+    <p>Make sure you are logged in (not on the QR screen), that you picked the real <code>wppconnect-wa.js</code>, and that you are on the latest release. If WhatsApp Web changed something wa-js does not handle yet, check the <a href="https://github.com/wppconnect-team/wa-js/releases" rel="noopener">wa-js releases</a>: a fix usually lands within days. Then <a id="issues" href="https://github.com/welidev/chat-web-export/issues" rel="noopener">open an issue</a> with the console output, after removing any names, numbers or messages from it.</p>
+  </details>
+  <details>
+    <summary>Privacy of this page</summary>
+    <p>This page is a static site hosted on GitHub Pages. It sets no cookies, has no analytics and makes no requests to other servers. GitHub receives your IP address when it serves the page, as described in the <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">GitHub Privacy Statement</a>. The download button takes you to GitHub.</p>
+  </details>
+
+  <footer>
+    <p><a id="repo" href="https://github.com/welidev/chat-web-export" rel="noopener">Source on GitHub</a> · MIT licensed · Built on <a href="https://github.com/wppconnect-team/wa-js" rel="noopener">wa-js</a> (Apache-2.0) · <a href="https://github.com/welidev/chat-web-export/blob/main/DISCLAIMER.md" rel="noopener">Disclaimer</a> · <a href="https://github.com/welidev/chat-web-export/issues" rel="noopener">Report a concern</a></p>
+    <p>chat-web-export is for educational and personal-archival purposes only, on your own account. Non-commercial. Provided "as is", without warranty of any kind. Not affiliated with, endorsed by, or supported by WhatsApp LLC or Meta Platforms, Inc. WhatsApp is a trademark of WhatsApp LLC, used here only to describe what the tool works with.</p>
+  </footer>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  let body = ''; // the minified exporter without its config line
+  let script = ''; // what Copy puts on the clipboard
+  let notice = ''; // leading comment from the build
+
+  const render = () => {
+    if (!body) return;
+    const days = Math.max(0, Math.floor(Number($('days').value) || 0));
+    const deep = $('deep').checked;
+    const cfg = `var DAYS=${days},DEEP=${deep};`;
+    script = notice + cfg + body;
+    const pre = $('script');
+    pre.textContent = '';
+    pre.append(notice, Object.assign(document.createElement('span'), { className: 'cfg', textContent: cfg }), body);
+    $('size').textContent = `· ${(script.length / 1024).toFixed(1)} KB · one line`;
+  };
+
+  fetch('export.min.js', { cache: 'no-cache' })
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then((text) => {
+      const m = text.match(/^(\/\*.*?\*\/)var DAYS=\d+,DEEP=(?:true|false);/);
+      if (!m) throw new Error('unexpected build output');
+      notice = m[1];
+      body = text.slice(m[0].length).trimEnd();
+      render();
+    })
+    .catch((e) => {
+      $('script').textContent = `Could not load the script (${e.message}). Run "npm run build" if you are serving this locally.`;
+    });
+
+  $('days').addEventListener('input', render);
+  $('deep').addEventListener('change', render);
+
+  const selectScript = () => {
+    const range = document.createRange();
+    range.selectNodeContents($('script'));
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  };
+  $('script').addEventListener('click', selectScript);
+
+  $('copy').addEventListener('click', async () => {
+    if (!script) return;
+    try {
+      await navigator.clipboard.writeText(script);
+    } catch {
+      selectScript();
+      document.execCommand('copy');
+    }
+    $('status').textContent = 'Copied. Paste it in the WhatsApp Web console and press Enter.';
+    $('copy').textContent = 'Copied ✓';
+    setTimeout(() => { $('copy').textContent = 'Copy script'; }, 2000);
+  });
+
+</script>
+</body>
+</html>
