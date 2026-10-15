@@ -1,5 +1,5 @@
-// Builds docs/export.min.js: the paste-ready one-liner the website shows. GitHub Pages serves docs/ as is,
-// so run `npm run build` and commit the result whenever export.js changes.
+// Builds docs/export.min.js: the paste-ready one-liner the website shows. Not committed: the Pages workflow
+// runs this on every push to main and deploys docs/.
 // The two config vars stay readable on the first line so the site (and people) can edit them.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { transformSync } from 'esbuild';

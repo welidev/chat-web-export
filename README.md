@@ -159,10 +159,10 @@ npm run dev          # build, then serve docs/ on http://localhost:4173
 | `export.js` | Readable source of the script. |
 | `build.mjs` | Minifies it with esbuild into `docs/export.min.js`, keeping the two settings readable on the first line. |
 | `docs/index.html` | The website: steps, settings, copy button, FAQ. No dependencies. |
-| `docs/export.min.js` | The built script the website serves. Committed, so the live page runs exactly what is in this repository. |
+| `.github/workflows/pages.yml` | On every push to `main`, builds the script from `export.js` and deploys `docs/` to GitHub Pages. |
 
-GitHub Pages serves the `docs/` folder of `main` as is. After changing `export.js`, run
-`npm run build` and commit `docs/export.min.js` together with it.
+The live script is always built by that workflow from the `export.js` in this repository, so
+what the website serves can be traced to a commit.
 
 Pull requests are welcome if they keep the project's scope: your own account, read-only, local
 files only, nothing sent anywhere. Features for reading other people's accounts, running
